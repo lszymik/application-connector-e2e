@@ -1,0 +1,21 @@
+plugins {
+    id 'groovy'
+}
+
+group 'Kyma-Project'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+    flatDir {
+        dirs 'libs'
+    }
+}
+
+dependencies {
+    compile("org.codehaus.groovy:groovy-all:2.4.15",
+            "org.spockframework:spock-core:1.2-groovy-2.4",
+            "io.kubernetes:client-java:3.0.0")
+    testCompile fileTree(include: ['*.jar'], dir: 'libs')
+    testCompile("org.spockframework:spock-core:1.2-groovy-2.4")
+}
