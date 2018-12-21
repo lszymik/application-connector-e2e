@@ -11,5 +11,6 @@ class KeyStoreInitializer {
         def stream = new FileOutputStream(jksStorePath)
 
         keyStore.store(stream, pass.toCharArray())
+        stream.close()
     }
 }

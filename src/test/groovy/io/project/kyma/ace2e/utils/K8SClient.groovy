@@ -24,24 +24,63 @@ class K8SClient {
         api = new CustomObjectsApi()
     }
 
-    def createApplication(Application body) {
-        return api.createClusterCustomObject(Definition.APP_ENV.getGroup(), Definition.APP_ENV.version, Definition.APP_ENV.plural, body, "true")
+    def createApplication(Application app) {
+        return api.createClusterCustomObject(Definition.APP_ENV.getGroup(),
+                Definition.APP_ENV.version,
+                Definition.APP_ENV.plural,
+                app,
+                "true")
     }
 
     def deleteApplication(String appName) {
-        return api.deleteClusterCustomObject(Definition.APP_ENV.getGroup(), Definition.APP_ENV.version, Definition.APP_ENV.plural, appName, new V1DeleteOptions(), 0, null, "Background")
+        return api.deleteClusterCustomObject(Definition.APP_ENV.getGroup(),
+                Definition.APP_ENV.version,
+                Definition.APP_ENV.plural,
+                appName,
+                new V1DeleteOptions(),
+                0,
+                null,
+                "Background")
     }
 
-    def getRequestToken(String appName) {
-        return api.getNamespacedCustomObject(Definition.TOKEN_REQ.getGroup(), Definition.TOKEN_REQ.version, "default", Definition.TOKEN_REQ.plural, appName)
+    def getTokenRequest(String appName) {
+        return api.getNamespacedCustomObject(Definition.TOKEN_REQ.getGroup(),
+                Definition.TOKEN_REQ.version,
+                "default",
+                Definition.TOKEN_REQ.plural,
+                appName)
     }
 
-    def createRequestToken(String appName) {
-        def body = new TokenRequest(appName)
-        return api.createNamespacedCustomObject(Definition.TOKEN_REQ.getGroup(), Definition.TOKEN_REQ.version, "default", Definition.TOKEN_REQ.plural, body, "true")
+    def createTokenRequest(String appName) {
+        return api.createNamespacedCustomObject(Definition.TOKEN_REQ.getGroup(),
+                Definition.TOKEN_REQ.version,
+                "default",
+                Definition.TOKEN_REQ.plural,
+                new TokenRequest(appName),
+                "true")
     }
 
-    def deleteRequestToken(String appName) {
-        return api.deleteNamespacedCustomObject(Definition.TOKEN_REQ.getGroup(), Definition.TOKEN_REQ.version, "default", Definition.TOKEN_REQ.plural, appName, new V1DeleteOptions(), 0, null, "Background")
+    def deleteTokenRequest(String appName) {
+        return api.deleteNamespacedCustomObject(Definition.TOKEN_REQ.getGroup(),
+                Definition.TOKEN_REQ.version,
+                "default",
+                Definition.TOKEN_REQ.plural,
+                appName,
+                new V1DeleteOptions(),
+                0,
+                null,
+                "Background")
+    }
+
+    def applicationExists(String appName, String namespace) {
+        try {
+            def obj = api.getNamespacedCustomObject(Definition.APP_ENV.getGroup(), Definition.APP_ENV.version, namespace, Definition.APP_ENV.plural, appName)
+            println("Returned object " + obj)
+            return obj != null
+        }
+        catch(e){
+            println("Exception: " + e.getMessage())
+            return false
+        }
     }
 }

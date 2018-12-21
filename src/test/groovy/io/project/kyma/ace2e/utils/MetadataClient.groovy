@@ -16,9 +16,9 @@ class MetadataClient {
 
     def getServices(String appName) {
         def path = String.format("/%s/v1/metadata/services", appName)
-        def response = (HttpResponseDecorator) restClient.get(path: path)
-        assert response.status == 200
-        (List) response.getData()
+        def response = restClient.get(path: path)
+
+        return (HttpResponseDecorator)response
     }
 
     def getService(String appName, String serviceId) {
