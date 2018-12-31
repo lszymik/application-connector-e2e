@@ -20,7 +20,7 @@ class TokenRequest {
 
 
 		@Override
-		public String toString() {
+		String toString() {
 			return "Status{" +
 					"expireAfter='" + expireAfter + '\'' +
 					", application='" + application + '\'' +

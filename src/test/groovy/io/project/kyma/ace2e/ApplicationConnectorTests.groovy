@@ -3,14 +3,10 @@ package io.project.kyma.ace2e
 import io.project.kyma.ace2e.model.Application
 import io.project.kyma.ace2e.model.Metadata
 import io.project.kyma.ace2e.model.Spec
-import io.project.kyma.ace2e.model.TokenRequest
-import io.project.kyma.ace2e.utils.EnvStore
+import io.project.kyma.ace2e.utils.CertificateManager
+import io.project.kyma.ace2e.utils.EnvironmentConfig
 import io.project.kyma.ace2e.utils.K8SClient
-import io.project.kyma.ace2e.utils.KeyStoreInitializer
 import io.project.kyma.ace2e.utils.MetadataClient
-import io.project.kyma.certificate.KymaConnector
-import org.hamcrest.Description
-import org.hamcrest.TypeSafeMatcher
 import spock.lang.Shared
 import spock.lang.Specification
 import static org.awaitility.Awaitility.*
@@ -19,7 +15,7 @@ import static java.util.concurrent.TimeUnit.*
 class ApplicationConnectorTests extends Specification {
 
     @Shared MetadataClient metadataClient
-    @Shared K8SClient k8SClient
+    @Shared K8SClient k8SClient = new K8SClient(EnvironmentConfig.kubeConfig)
     @Shared Application app = newTestApp()
 
     @Shared def keystorePass = ""
@@ -27,49 +23,17 @@ class ApplicationConnectorTests extends Specification {
 
     def setupSpec() {
         println "Starting test"
-        EnvStore.readEnv()
-        k8SClient = new K8SClient(EnvStore.kubeConfig)
         k8SClient.createApplication(app)
         await().atMost(10, SECONDS).until{
 			k8SClient.applicationExists(app.metadata.name, "default")
 		}
-        
-        printf("Application %s created\n", app.metadata.name)
-        k8SClient.createTokenRequest(app.metadata.name)
 
-        printf("Request token %s created\n", app.metadata.name)
-		def tr = await().conditionEvaluationListener().atMost(30, SECONDS).until({
-			TokenRequest t = (TokenRequest)k8SClient.getTokenRequest(app.metadata.name)
-			println("Token REquest = " + t.toString())
-			t
-		}, new TypeSafeMatcher<TokenRequest>() {
-			@Override
-			protected boolean matchesSafely(final TokenRequest item) {
-				return item.status.state == "OK"
-			}
+		CertificateManager cm = new CertificateManager(k8SClient: k8SClient, application: app.metadata.name)
+		cm.setupNewCertificate()
 
-			@Override
-			void describeTo(final Description description) {
-			}
-		})
-
-
-        def extractedTokenUrl = tr.status.url
-
-        def kymaConnector = new KymaConnector()
-        
-        kymaConnector.generateCertificates(extractedTokenUrl, EnvStore.savePath)
-
-        def certFile = new File(EnvStore.certPath)
-        def keyFile = new File(EnvStore.keyPath)
-
-        certFile.deleteOnExit()
-        keyFile.deleteOnExit()
-        
-        KeyStoreInitializer.createJKSFileWithCert(certFile, keyFile, keystorePass, EnvStore.jskStorePath)
-        metadataClient = new MetadataClient(EnvStore.host, EnvStore.jskStorePath, keystorePass)
-
-        await().atMost(10, SECONDS).until{certificateIsReady(metadataClient, app.metadata.name)}
+		metadataClient = new MetadataClient(EnvironmentConfig.host, EnvironmentConfig.jskStorePath, keystorePass)
+		await().atMost(20, SECONDS).until{
+			certificateIsReady(metadataClient, app.metadata.name)}
     }
 
 
@@ -85,6 +49,8 @@ class ApplicationConnectorTests extends Specification {
     }
 
     def certificateIsReady(MetadataClient metadataClient, String appName){
+		assert metadataClient!= null
+
         try{
             def res = metadataClient.getServices(appName)
             
@@ -100,7 +66,7 @@ class ApplicationConnectorTests extends Specification {
         printf("Application %s deleted\n", app.metadata.name)
         k8SClient.deleteTokenRequest(app.metadata.name)
         printf("Request token %s deleted\n", app.metadata.name)
-        new File(EnvStore.jskStorePath).delete()
+        new File(EnvironmentConfig.jskStorePath).delete()
     }
 
     def "should return empty service list"() {
