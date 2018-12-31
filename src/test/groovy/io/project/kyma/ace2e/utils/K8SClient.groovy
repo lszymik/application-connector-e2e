@@ -5,89 +5,67 @@ import io.kubernetes.client.Configuration
 import io.kubernetes.client.apis.CustomObjectsApi
 import io.kubernetes.client.models.V1DeleteOptions
 import io.kubernetes.client.util.Config
-import io.project.kyma.ace2e.model.Definition
-import io.project.kyma.ace2e.model.Application
-import io.project.kyma.ace2e.model.Metadata
-import io.project.kyma.ace2e.model.TokenRequest
+import io.project.kyma.ace2e.model.k8s.Application
+import io.project.kyma.ace2e.model.k8s.Metadata
+import io.project.kyma.ace2e.model.k8s.TokenRequest
 
 class K8SClient {
 
-    private CustomObjectsApi api
+	static final String API_GROUP = "applicationconnector.kyma-project.io"
+	static final String API_VERSION = "v1alpha1"
+	static final String APPLICATIONS = "applications"
+	static final String TOKEN_REQUESTS = "tokenrequests"
 
-    K8SClient(String kubeConfig) {
-        ApiClient client
-        if(kubeConfig != null && "null" != kubeConfig && "" != kubeConfig) {
-            client = Config.fromConfig(kubeConfig)
-        } else {
-            client = Config.defaultClient()
-        }
-        Configuration.setDefaultApiClient(client)
-        api = new CustomObjectsApi()
-    }
+	K8SClient(String kubeConfig) {
+		final ApiClient client = (kubeConfig != null)? Config.fromConfig(kubeConfig) : Config.defaultClient()
 
-    def createApplication(Application app) {
-        return api.createClusterCustomObject(Definition.APP_ENV.getGroup(),
-                Definition.APP_ENV.version,
-                Definition.APP_ENV.plural,
-                app,
-                "true")
-    }
+		Configuration.setDefaultApiClient(client)
+		api = new CustomObjectsApi()
+	}
 
-    def deleteApplication(String appName) {
-        return api.deleteClusterCustomObject(Definition.APP_ENV.getGroup(),
-                Definition.APP_ENV.version,
-                Definition.APP_ENV.plural,
-                appName,
-                new V1DeleteOptions(),
-                0,
-                null,
-                "Background")
-    }
+	def createApplication(Application app, String namespace) {
+		api.createNamespacedCustomObject(API_GROUP, API_VERSION, namespace, APPLICATIONS, app, "true")
+	}
 
-    def getTokenRequest(String appName) {
-        return api.getNamespacedCustomObject(Definition.TOKEN_REQ.getGroup(),
-                Definition.TOKEN_REQ.version,
-                "default",
-                Definition.TOKEN_REQ.plural,
-                appName)
-    }
+	def getApplication(String app, String namespace) {
+		api.getNamespacedCustomObject(API_GROUP, API_VERSION, namespace, APPLICATIONS, app)
+	}
 
-    def createTokenRequest(String appName) {
-        TokenRequest tr = new TokenRequest().with{
-            metadata = new Metadata(name: appName)
-            apiVersion = "applicationconnector.kyma-project.io/v1alpha1"
-            kind = "TokenRequest"
-            it
-        }
-        return api.createNamespacedCustomObject(Definition.TOKEN_REQ.getGroup(),
-                Definition.TOKEN_REQ.version,
-                "default",
-                Definition.TOKEN_REQ.plural,
-                tr,
-                "true")
-    }
+	def deleteApplication(String appName, String namespace) {
+		api.deleteNamespacedCustomObject(API_GROUP, API_VERSION,
+				namespace,
+				APPLICATIONS,
+				appName,
+				new V1DeleteOptions(),
+				0,
+				null,
+				"Background")
+	}
 
-    def deleteTokenRequest(String appName) {
-        return api.deleteNamespacedCustomObject(Definition.TOKEN_REQ.getGroup(),
-                Definition.TOKEN_REQ.version,
-                "default",
-                Definition.TOKEN_REQ.plural,
-                appName,
-                new V1DeleteOptions(),
-                0,
-                null,
-                "Background")
-    }
+	def getTokenRequest(String appName, String namespace) {
+		api.getNamespacedCustomObject(API_GROUP, API_VERSION, namespace, TOKEN_REQUESTS, appName)
+	}
 
-    def applicationExists(String appName, String namespace) {
-        try {
-            def obj = api.getNamespacedCustomObject(Definition.APP_ENV.getGroup(), Definition.APP_ENV.version, namespace, Definition.APP_ENV.plural, appName)
+	def createTokenRequest(String appName, String namespace) {
+		TokenRequest tr = new TokenRequest().with {
+			metadata = new Metadata(name: appName)
+			apiVersion = "${API_GROUP}/${API_VERSION}"
+			kind = "TokenRequest"
+			it
+		}
 
-            return obj != null
-        }
-        catch(e){
-            println("Exception: " + e.getMessage())
-            return false
-        }
-    }
+		api.createNamespacedCustomObject(API_GROUP, API_VERSION, namespace, TOKEN_REQUESTS, tr, "true")
+	}
+
+	def deleteTokenRequest(String appName, String namespace) {
+		api.deleteNamespacedCustomObject(API_GROUP, API_VERSION, namespace,
+				TOKEN_REQUESTS,
+				appName,
+				new V1DeleteOptions(),
+				0,
+				null,
+				"Background")
+	}
+
+	private CustomObjectsApi api
 }

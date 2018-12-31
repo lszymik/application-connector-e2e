@@ -1,14 +1,13 @@
-package io.project.kyma.ace2e.model
+package io.project.kyma.ace2e.model.k8s
 
 import groovy.transform.EqualsAndHashCode
 
 @EqualsAndHashCode
 class TokenRequest {
-
-    String apiVersion
-    String kind
-    Metadata metadata
-    Spec spec
+	String apiVersion
+	String kind
+	Metadata metadata
+	Spec spec
 	Status status
 
 	class Status {
@@ -27,7 +26,7 @@ class TokenRequest {
 					", token='" + token + '\'' +
 					", state='" + state + '\'' +
 					", url='" + url + '\'' +
-					'}';
+					'}'
 		}
 	}
 
@@ -39,7 +38,7 @@ class TokenRequest {
 				", metadata=" + metadata +
 				", spec=" + spec +
 				", status=" + status +
-				'}';
+				'}'
 	}
-	
+
 }

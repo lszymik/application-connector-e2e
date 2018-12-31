@@ -1,6 +1,6 @@
 package io.project.kyma.ace2e.utils
 
-import io.project.kyma.ace2e.model.TokenRequest
+import io.project.kyma.ace2e.model.k8s.TokenRequest
 import io.project.kyma.certificate.KymaConnector
 import org.hamcrest.Description
 import org.hamcrest.TypeSafeMatcher
@@ -13,28 +13,39 @@ class CertificateManager {
 
 	private K8SClient k8SClient
 	private String application
+	private String namespace
+	private String keyStorePassword
 
-	def setupNewCertificate() {
-		createTokenRequest(application)
-		TokenRequest tr = waitUntilTokenUrlAvailable(application)
+	def setupCertificateInKeyStore() {
+		createTokenRequest(application, namespace)
+		final TokenRequest tr = waitUntilTokenUrlAvailable(application)
 
 		generateCertificate(tr.status.url, EnvironmentConfig.savePath)
-		ensureFilesCleanUp(EnvironmentConfig.certPath, EnvironmentConfig.keyPath)
 
-		createKeyStore(EnvironmentConfig.certPath, EnvironmentConfig.keyPath, EnvironmentConfig.jskStorePath)
+		final File certFile = new File(EnvironmentConfig.certPath)
+		final File keyFile = new File(EnvironmentConfig.keyPath)
+		final File keyChainFile = new File(EnvironmentConfig.keyChainPath)
+		final File keystoreFile = new File(EnvironmentConfig.jksStorePath)
+
+		ensureFilesCleanUp(certFile, keyFile, keyChainFile)
+
+		createKeyStore(certFile, keyFile, keystoreFile, keyStorePassword)
 	}
 
-	private TokenRequest createTokenRequest(String application) {
-		k8SClient.createTokenRequest(application)
+	private def createTokenRequest(String application, String namespace) {
+		k8SClient.createTokenRequest(application, namespace)
 	}
 
-	private waitUntilTokenUrlAvailable(String application){
-		await().conditionEvaluationListener().atMost(30, SECONDS).until({
-			(TokenRequest)k8SClient.getTokenRequest(application)
+	private waitUntilTokenUrlAvailable(String application) {
+		await().atMost(30, SECONDS)
+				.pollDelay(2, SECONDS)
+				.pollInterval(5, SECONDS)
+				.until({
+			(TokenRequest) k8SClient.getTokenRequest(application, namespace)
 		}, new TypeSafeMatcher<TokenRequest>() {
 			@Override
-			protected boolean matchesSafely(final TokenRequest item) {
-				return item.status.url != null && item.status.url != ""
+			protected boolean matchesSafely(final TokenRequest tr) {
+				return tr.status != null && tr.status.url != null && tr.status.url != ""
 			}
 
 			@Override
@@ -43,25 +54,26 @@ class CertificateManager {
 		})
 	}
 
-	private generateCertificate(String tokenUrl, String savePath){
+	private generateCertificate(String tokenUrl, String savePath) {
 		new KymaConnector().generateCertificates(tokenUrl, savePath)
 	}
 
-	private ensureFilesCleanUp(String certPath, String keyPath){
-		assert new File(certPath).exists()
-		assert new File(keyPath).exists()
-
-		new File(certPath).deleteOnExit()
-		new File(keyPath).deleteOnExit()
+	private ensureFilesCleanUp(File certFile, File keyFile, File keyChainFile) {
+		certFile.deleteOnExit()
+		keyFile.deleteOnExit()
+		keyChainFile.deleteOnExit()
 	}
 
-	private createKeyStore(String certPath, String keyPath, String keyStorePath){
-		File keyStoreFile = new File(keyStorePath)
+	private createKeyStore(File certFile, File keyFile, File keyStoreFile, String password) {
+		assert certFile.exists()
+		assert keyFile.exists()
 
-		keyStoreFile.withOutputStream {os->
-			PemReader.loadKeyStore(new File(certPath), new File(keyPath), Optional.empty())
-					.store(os, "".toCharArray())
-		 }
+		keyStoreFile.withOutputStream { os ->
+			PemReader.loadKeyStore(certFile, keyFile, Optional.empty())
+					.store(os, password.toCharArray())
+
+			os.close()
+		}
 
 		keyStoreFile.deleteOnExit()
 	}
