@@ -1,6 +1,8 @@
 package io.project.kyma.ace2e
 
 import io.project.kyma.ace2e.model.Application
+import io.project.kyma.ace2e.model.Metadata
+import io.project.kyma.ace2e.model.Spec
 import io.project.kyma.ace2e.utils.EnvStore
 import io.project.kyma.ace2e.utils.K8SClient
 import io.project.kyma.ace2e.utils.KeyStoreInitializer
@@ -17,25 +19,25 @@ class ApplicationConnectorTests extends Specification {
 
     @Shared MetadataClient metadataClient
     @Shared K8SClient k8SClient
-    @Shared Application app
+    @Shared Application app = newTestApp()
 
     @Shared def keystorePass = ""
+
 
     def setupSpec() {
         println "Starting test"
         EnvStore.readEnv()
-        app = Application.buildTestApp()
         k8SClient = new K8SClient(EnvStore.kubeConfig)
         k8SClient.createApplication(app)
-        await().atMost(10, SECONDS).until{ k8SClient.applicationExists(app.getMetadataName(), "default") == true }
+        await().atMost(10, SECONDS).until{ k8SClient.applicationExists(app.metadata.name, "default") == true }
         
-        printf("Application %s created\n", app.metadataName)
-        k8SClient.createTokenRequest(app.metadataName)
+        printf("Application %s created\n", app.metadata.name)
+        k8SClient.createTokenRequest(app.metadata.name)
 
-        printf("Request token %s created\n", app.metadataName)
+        printf("Request token %s created\n", app.metadata.name)
 
         def token = RetryClosure.retry(
-            { k8SClient.getTokenRequest(app.metadataName) },
+            { k8SClient.getTokenRequest(app.metadata.name) },
             { closureToken -> closureToken.toString().contains("url:") }
         )
 
@@ -55,7 +57,19 @@ class ApplicationConnectorTests extends Specification {
         KeyStoreInitializer.createJKSFileWithCert(certFile, keyFile, keystorePass, EnvStore.jskStorePath)
         metadataClient = new MetadataClient(EnvStore.host, EnvStore.jskStorePath, keystorePass)
 
-        await().atMost(10, SECONDS).until{certificateIsReady(metadataClient, app.getMetadataName())}
+        await().atMost(10, SECONDS).until{certificateIsReady(metadataClient, app.metadata.name)}
+    }
+
+
+
+    private Application newTestApp() {
+        new Application().with {
+            apiVersion = "applicationconnector.kyma-project.io/v1alpha1"
+            kind = "Application"
+            metadata = new Metadata(name: "test-app-e2e")
+            spec = new Spec(description: "Application for testing purpose")
+            it
+            }
     }
 
     def certificateIsReady(MetadataClient metadataClient, String appName){
@@ -70,16 +84,16 @@ class ApplicationConnectorTests extends Specification {
     }
 
     def cleanupSpec() {
-        k8SClient.deleteApplication(app.metadataName)
-        printf("Application %s deleted\n", app.metadataName)
-        k8SClient.deleteTokenRequest(app.metadataName)
-        printf("Request token %s deleted\n", app.metadataName)
+        k8SClient.deleteApplication(app.metadata.name)
+        printf("Application %s deleted\n", app.metadata.name)
+        k8SClient.deleteTokenRequest(app.metadata.name)
+        printf("Request token %s deleted\n", app.metadata.name)
         new File(EnvStore.jskStorePath).delete()
     }
 
     def "should return empty service list"() {
         when:
-            def res = metadataClient.getServices(app.metadataName)
+            def res = metadataClient.getServices(app.metadata.name)
         then:
         res.status == 200
         ((List)res.getData()).size() == 0
@@ -113,14 +127,9 @@ class ApplicationConnectorTests extends Specification {
                     "}\n" +
                     "}"
         when:
-            metadataClient.createService(app.metadataName, service)
-
-//            def services = RetryClosure.retry(
-//                { metadataClient.getServices(app.metadataName) },
-//                { closureServices -> closureServices.size() == 1 }
-//            )
+            metadataClient.createService(app.metadata.name, service)
         then:
-        await().atMost(10, SECONDS).until{ready(app.getMetadataName())}
+        await().atMost(10, SECONDS).until{ready(app.metadata.name)}
 
     }
 }

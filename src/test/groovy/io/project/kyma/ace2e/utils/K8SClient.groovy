@@ -7,6 +7,7 @@ import io.kubernetes.client.models.V1DeleteOptions
 import io.kubernetes.client.util.Config
 import io.project.kyma.ace2e.model.Definition
 import io.project.kyma.ace2e.model.Application
+import io.project.kyma.ace2e.model.Metadata
 import io.project.kyma.ace2e.model.TokenRequest
 
 class K8SClient {
@@ -52,11 +53,18 @@ class K8SClient {
     }
 
     def createTokenRequest(String appName) {
+        TokenRequest tr = new TokenRequest().with{
+            metadata = new Metadata(name: appName)
+            application = appName
+            apiVersion = "applicationconnector.kyma-project.io/v1alpha1"
+            kind = "TokenRequest"
+            it
+        }
         return api.createNamespacedCustomObject(Definition.TOKEN_REQ.getGroup(),
                 Definition.TOKEN_REQ.version,
                 "default",
                 Definition.TOKEN_REQ.plural,
-                new TokenRequest(appName),
+                tr,
                 "true")
     }
 
@@ -75,7 +83,7 @@ class K8SClient {
     def applicationExists(String appName, String namespace) {
         try {
             def obj = api.getNamespacedCustomObject(Definition.APP_ENV.getGroup(), Definition.APP_ENV.version, namespace, Definition.APP_ENV.plural, appName)
-            println("Returned object " + obj)
+
             return obj != null
         }
         catch(e){

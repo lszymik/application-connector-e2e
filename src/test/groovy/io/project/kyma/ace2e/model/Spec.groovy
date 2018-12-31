@@ -11,16 +11,12 @@
  */
 package io.project.kyma.ace2e.model
 
+import com.google.gson.internal.LinkedTreeMap
 import groovy.transform.EqualsAndHashCode
 
 @EqualsAndHashCode
-class Metadata {
-	String clusterName
-	String creationTimestamp
-	int generation
-	String name
-	String namespace
-	String resourceVersion
-	String selfLink
-	String uid
+class Spec {
+	String description
+	LinkedTreeMap<String,String> labels
+	String region
 }
