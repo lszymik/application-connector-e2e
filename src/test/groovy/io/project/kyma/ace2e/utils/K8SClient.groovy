@@ -55,7 +55,6 @@ class K8SClient {
     def createTokenRequest(String appName) {
         TokenRequest tr = new TokenRequest().with{
             metadata = new Metadata(name: appName)
-            application = appName
             apiVersion = "applicationconnector.kyma-project.io/v1alpha1"
             kind = "TokenRequest"
             it

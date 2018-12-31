@@ -3,13 +3,14 @@ package io.project.kyma.ace2e
 import io.project.kyma.ace2e.model.Application
 import io.project.kyma.ace2e.model.Metadata
 import io.project.kyma.ace2e.model.Spec
+import io.project.kyma.ace2e.model.TokenRequest
 import io.project.kyma.ace2e.utils.EnvStore
 import io.project.kyma.ace2e.utils.K8SClient
 import io.project.kyma.ace2e.utils.KeyStoreInitializer
 import io.project.kyma.ace2e.utils.MetadataClient
-import io.project.kyma.ace2e.utils.TokenExtractor
-import io.project.kyma.ace2e.utils.RetryClosure
 import io.project.kyma.certificate.KymaConnector
+import org.hamcrest.Description
+import org.hamcrest.TypeSafeMatcher
 import spock.lang.Shared
 import spock.lang.Specification
 import static org.awaitility.Awaitility.*
@@ -29,20 +30,31 @@ class ApplicationConnectorTests extends Specification {
         EnvStore.readEnv()
         k8SClient = new K8SClient(EnvStore.kubeConfig)
         k8SClient.createApplication(app)
-        await().atMost(10, SECONDS).until{ k8SClient.applicationExists(app.metadata.name, "default") == true }
+        await().atMost(10, SECONDS).until{
+			k8SClient.applicationExists(app.metadata.name, "default")
+		}
         
         printf("Application %s created\n", app.metadata.name)
         k8SClient.createTokenRequest(app.metadata.name)
 
         printf("Request token %s created\n", app.metadata.name)
+		def tr = await().conditionEvaluationListener().atMost(30, SECONDS).until({
+			TokenRequest t = (TokenRequest)k8SClient.getTokenRequest(app.metadata.name)
+			println("Token REquest = " + t.toString())
+			t
+		}, new TypeSafeMatcher<TokenRequest>() {
+			@Override
+			protected boolean matchesSafely(final TokenRequest item) {
+				return item.status.state == "OK"
+			}
 
-        def token = RetryClosure.retry(
-            { k8SClient.getTokenRequest(app.metadata.name) },
-            { closureToken -> closureToken.toString().contains("url:") }
-        )
+			@Override
+			void describeTo(final Description description) {
+			}
+		})
 
-        def extractedTokenUrl = TokenExtractor.extract(token.toString())
-        println("Extracted tokenURL: " + extractedTokenUrl)
+
+        def extractedTokenUrl = tr.status.url
 
         def kymaConnector = new KymaConnector()
         
