@@ -1,104 +1,109 @@
 package io.project.kyma.ace2e
 
-import io.project.kyma.ace2e.model.Application
-import io.project.kyma.ace2e.utils.EnvStore
+import io.project.kyma.ace2e.model.k8s.Application
+import io.project.kyma.ace2e.model.k8s.Metadata
+import io.project.kyma.ace2e.model.k8s.Spec
+import io.project.kyma.ace2e.utils.CertificateManager
+import io.project.kyma.ace2e.utils.EnvironmentConfig
 import io.project.kyma.ace2e.utils.K8SClient
-import io.project.kyma.ace2e.utils.KeyStoreInitializer
-import io.project.kyma.ace2e.utils.MetadataClient
-import io.project.kyma.ace2e.utils.TokenExtractor
-import io.project.kyma.ace2e.utils.RetryClosure
-import io.project.kyma.certificate.KymaConnector
+import io.project.kyma.ace2e.utils.APIRegistryClient
 import spock.lang.Shared
 import spock.lang.Specification
 
+import static java.util.concurrent.TimeUnit.SECONDS
+import static org.apache.http.HttpStatus.SC_OK
+import static org.awaitility.Awaitility.await
+
 class ApplicationConnectorTests extends Specification {
 
-    @Shared MetadataClient metadataClient
-    @Shared K8SClient k8SClient
-    @Shared Application app
+	@Shared
+	APIRegistryClient apiRegistryClient
+	@Shared
+	K8SClient k8SClient = new K8SClient(EnvironmentConfig.kubeConfig)
 
-    @Shared def keystorePass = ""
+	@Shared
+	def keystorePass = ""
+	@Shared
+	String namespace = "kyma-integration"
+	@Shared
+	String application = "test-app-e2e"
 
-    def setupSpec() {
-        println "Starting test"
-        EnvStore.readEnv()
-        app = Application.buildTestApp()
-        k8SClient = new K8SClient(EnvStore.kubeConfig)
-        k8SClient.createApplication(app)
-        printf("Application %s created\n", app.metadataName)
-        k8SClient.createRequestToken(app.metadataName)
-        printf("Request token %s created\n", app.metadataName)
+	def setupSpec() {
+		createApplicationCRD()
+		setupClientCertificateInKeyStore()
+		setupAPIRegistryClient()
+	}
 
-        def token = RetryClosure.retry(
-            { k8SClient.getRequestToken(app.metadataName) },
-            { closureToken -> closureToken.toString().contains("url:") }
-        )
-        def extractedTokenUrl = TokenExtractor.extract(token.toString())
-        println("Extracted tokenURL: " + extractedTokenUrl)
+	def "should create service"() {
+		given:
+		def service = [
+				provider   : "SAP",
+				name       : "test-service",
+				description: "httpbin.org",
+				api        : [
+						targetUrl: "https://httpbin.org"
+				]
+		]
+		when:
+		def postResp = apiRegistryClient.createService(application, service)
 
-        def kymaConnector = new KymaConnector()
+		then:
+		postResp.status == SC_OK
 
-        kymaConnector.generateCertificates(extractedTokenUrl, EnvStore.savePath)
+		when:
+		String id = postResp.data.id
+		def resp = apiRegistryClient.getService(application, id)
 
-        def certFile = new File(EnvStore.certPath)
-        def keyFile = new File(EnvStore.keyPath)
+		then:
+		resp.status == SC_OK
+		resp.data.provider == "SAP"
+		resp.data.name == "test-service"
+		resp.data.description == "httpbin.org"
+		resp.data.api.targetUrl == "https://httpbin.org"
+	}
 
-        certFile.deleteOnExit()
-        keyFile.deleteOnExit()
+	def cleanupSpec() {
+		k8SClient.deleteApplication(application, namespace)
+		k8SClient.deleteTokenRequest(application, namespace)
+	}
 
-        sleep(5000)
+	private def createApplicationCRD() {
+		k8SClient.createApplication(newTestApp(), namespace)
+		await().atMost(20, SECONDS)
+				.pollDelay(2, SECONDS)
+				.pollInterval(5, SECONDS)
+				.until {
+			k8SClient.getApplication(application, namespace) != null
+		}
+	}
 
-        KeyStoreInitializer.createJKSFileWithCert(certFile, keyFile, keystorePass, EnvStore.jskStorePath)
-        metadataClient = new MetadataClient(EnvStore.host, EnvStore.jskStorePath, keystorePass)
-    }
+	private def setupClientCertificateInKeyStore() {
+		new CertificateManager(k8SClient: k8SClient, application: application, namespace: namespace, keyStorePassword: keystorePass)
+				.setupCertificateInKeyStore()
+	}
 
-    def cleanupSpec() {
-        k8SClient.deleteApplication(app.metadataName)
-        printf("Application %s deleted\n", app.metadataName)
-        k8SClient.deleteRequestToken(app.metadataName)
-        printf("Request token %s deleted\n", app.metadataName)
-        new File(EnvStore.jskStorePath).delete()
-    }
+	private def setupAPIRegistryClient() {
+		apiRegistryClient = new APIRegistryClient(EnvironmentConfig.host, EnvironmentConfig.jksStorePath, keystorePass)
+		await().atMost(30, SECONDS)
+				.pollDelay(2, SECONDS)
+				.pollInterval(5, SECONDS)
+				.until {
+			try {
+				apiRegistryClient.getServices(application).status == SC_OK
+			}
+			catch (e) {
+				false
+			}
+		}
+	}
 
-    def "Spock check"() {
-        given:
-            def list = new ArrayList()
-        when:
-            list.add"Spock"
-        then:
-            list.size() == 1
-    }
-
-    def "should return empty service list"() {
-        when:
-            def services = metadataClient.getServices(app.metadataName)
-        then:
-            services.empty
-    }
-
-    def "should create service and return service list with one item"() {
-        given:
-            def service = "{\n" +
-                    "\"provider\": \"SAP Hybris\",\n" +
-                    "\"name\": \"test-proxy-basic-auth\",\n" +
-                    "\"description\": \"httpbin.org\",\n" +
-                    "\"api\": {\n" +
-                    "  \"targetUrl\": \"https://httpbin.org\",\n" +
-                    "  \"credentials\" : {\n" +
-                    "    \"basic\" : {\n" +
-                    "      \"username\" : \"user\",\n" +
-                    "      \"password\" : \"pass\"\n" +
-                    "    }\n" +
-                    "  }\n" +
-                    "}\n" +
-                    "}"
-        when:
-            metadataClient.createService(app.metadataName, service)
-            def services = RetryClosure.retry(
-                { metadataClient.getServices(app.metadataName) },
-                { closureServices -> closureServices.size() == 1 }
-            )
-        then:
-            services.size() == 1
-    }
+	private Application newTestApp() {
+		new Application().with {
+			apiVersion = "${K8SClient.API_GROUP}/${K8SClient.API_VERSION}"
+			kind = "Application"
+			metadata = new Metadata(name: application)
+			spec = new Spec(description: "Application for testing purpose")
+			it
+		}
+	}
 }

@@ -4,12 +4,6 @@
 
 Project application-connector-e2e is a testing tool that aggregates few features needed to perform end to end testing of Kyma's Application Connnector module:
 
-- KymaConnector - based on kymaconnector project, creates certificates and private key required to communicate with Applications on Kyma cluster, basing on one time integration token fetched from Kyma's application connector.
-- K8SClient - based on Kubernetes Custom Objects API, allows connection to Kyma cluster and creates/deletes Applications.
-- KeyStoreInitializer - reads PEM files created by KymaConnector and creates new Java Key Store. This allows to establish a secure connection with Kyma's Metadata Service.
-- MetadataClient - provides REST methods for services associated with Applications.
-- Spock testing framework
-
 ## Usage
 
 Before starting tests, the following environmental variables has to be exported:
@@ -23,6 +17,3 @@ In case of local Kyma development, Kyma server certificate has to be added to th
 
 After exporting variables, run `./gradlew clean test` in the project's main catalogue to build project and run tests, or `./gradlew clean test --info` for additional logs.
 
-## Development
-
-At this stage, all test are run on default Application (named `test-app-e2e`) that is automatically created. In case of need for another App, there is builder class available in `Application.groovy` file.
