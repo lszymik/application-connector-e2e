@@ -3,7 +3,7 @@ package io.project.kyma.ace2e.model.k8s
 import groovy.transform.EqualsAndHashCode
 
 @EqualsAndHashCode
-class Application {
+class Subscription {
     String apiVersion
     String kind
     Metadata metadata
@@ -11,7 +11,7 @@ class Application {
 
     @Override
     String toString() {
-        return "Application{" +
+        return "Subscription{" +
                 "apiVersion='" + apiVersion + '\'' +
                 ", kind='" + kind + '\'' +
                 ", metadata=" + metadata +
@@ -20,6 +20,12 @@ class Application {
     }
 
     static class Spec {
-        String description
+        String endpoint
+        String event_type
+        String event_type_version
+        boolean include_subscription_name_header
+        int max_inflight
+        int push_request_timeout_ms
+        String source_id
     }
 }

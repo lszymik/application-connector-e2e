@@ -3,15 +3,16 @@ package io.project.kyma.ace2e.model.k8s
 import groovy.transform.EqualsAndHashCode
 
 @EqualsAndHashCode
-class Application {
+class ServiceInstance {
     String apiVersion
     String kind
     Metadata metadata
     Spec spec
 
+
     @Override
     String toString() {
-        return "Application{" +
+        return "ServiceInstance{" +
                 "apiVersion='" + apiVersion + '\'' +
                 ", kind='" + kind + '\'' +
                 ", metadata=" + metadata +
@@ -20,6 +21,6 @@ class Application {
     }
 
     static class Spec {
-        String description
+        String serviceClassExternalName
     }
 }

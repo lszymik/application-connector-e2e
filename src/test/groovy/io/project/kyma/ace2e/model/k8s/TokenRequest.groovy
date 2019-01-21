@@ -7,7 +7,6 @@ class TokenRequest {
 	String apiVersion
 	String kind
 	Metadata metadata
-	Spec spec
 	Status status
 
 	class Status {
@@ -36,7 +35,6 @@ class TokenRequest {
 				"apiVersion='" + apiVersion + '\'' +
 				", kind='" + kind + '\'' +
 				", metadata=" + metadata +
-				", spec=" + spec +
 				", status=" + status +
 				'}'
 	}

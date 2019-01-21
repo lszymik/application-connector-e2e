@@ -1,16 +1,11 @@
 package io.project.kyma.ace2e.utils
 
-import groovyx.net.http.ContentType
-import groovyx.net.http.RESTClient
-
 class APIRegistryClient {
 
-	private RESTClient restClient
+	private KymaRESTClient restClient
 
-	APIRegistryClient(String basicMetadataPath, String jksStorePath, String keystorePass) {
-		final String certURL = "file://localhost${jksStorePath}"
-		restClient = new RESTClient(basicMetadataPath, ContentType.JSON)
-		restClient.auth.certificate(certURL, keystorePass)
+	APIRegistryClient(KymaRESTClient kymaRESTClient) {
+		restClient = kymaRESTClient
 	}
 
 	def getServices(String appName) {

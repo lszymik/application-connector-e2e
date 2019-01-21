@@ -3,23 +3,30 @@ package io.project.kyma.ace2e.model.k8s
 import groovy.transform.EqualsAndHashCode
 
 @EqualsAndHashCode
-class Application {
+class LambdaFunction {
     String apiVersion
-    String kind
     Metadata metadata
     Spec spec
+    String kind
 
     @Override
     String toString() {
-        return "Application{" +
+        return "LambdaFunction{" +
                 "apiVersion='" + apiVersion + '\'' +
-                ", kind='" + kind + '\'' +
                 ", metadata=" + metadata +
                 ", spec=" + spec +
+                ", kind='" + kind + '\'' +
                 '}'
     }
 
+
     static class Spec {
-        String description
+        String deps
+        String function
+        String functionContentType
+        String handler
+        String runtime
+        String timeout
+        String topic
     }
 }

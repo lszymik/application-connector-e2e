@@ -20,16 +20,11 @@ class CertificateManager {
 		createTokenRequest(application, namespace)
 		final TokenRequest tr = waitUntilTokenUrlAvailable(application)
 
-		generateCertificate(tr.status.url, EnvironmentConfig.savePath)
+		generateCertificate(tr.status.url)
+		createKeyStore(keyStorePassword)
 
-		final File certFile = new File(EnvironmentConfig.certPath)
-		final File keyFile = new File(EnvironmentConfig.keyPath)
-		final File keyChainFile = new File(EnvironmentConfig.keyChainPath)
-		final File keystoreFile = new File(EnvironmentConfig.jksStorePath)
-
-		ensureFilesCleanUp(certFile, keyFile, keyChainFile)
-
-		createKeyStore(certFile, keyFile, keystoreFile, keyStorePassword)
+		removeTokenRequest()
+		ensureFilesCleanUp()
 	}
 
 	private def createTokenRequest(String application, String namespace) {
@@ -54,17 +49,15 @@ class CertificateManager {
 		})
 	}
 
-	private generateCertificate(String tokenUrl, String savePath) {
-		new KymaConnector().generateCertificates(tokenUrl, savePath)
+	private generateCertificate(String tokenUrl) {
+		new KymaConnector().generateCertificates(tokenUrl, EnvironmentConfig.savePath)
 	}
 
-	private ensureFilesCleanUp(File certFile, File keyFile, File keyChainFile) {
-		certFile.deleteOnExit()
-		keyFile.deleteOnExit()
-		keyChainFile.deleteOnExit()
-	}
+	private createKeyStore(String password) {
+		final File certFile = new File(EnvironmentConfig.certPath)
+		final File keyFile = new File(EnvironmentConfig.keyPath)
+		final File keyStoreFile = new File(EnvironmentConfig.jksStorePath)
 
-	private createKeyStore(File certFile, File keyFile, File keyStoreFile, String password) {
 		assert certFile.exists()
 		assert keyFile.exists()
 
@@ -76,5 +69,16 @@ class CertificateManager {
 		}
 
 		keyStoreFile.deleteOnExit()
+	}
+
+	private ensureFilesCleanUp() {
+		new File(EnvironmentConfig.certPath).deleteOnExit()
+		new File(EnvironmentConfig.keyPath).deleteOnExit()
+		new File(EnvironmentConfig.keyChainPath).deleteOnExit()
+		new File(EnvironmentConfig.jksStorePath).deleteOnExit()
+	}
+
+	private def removeTokenRequest(){
+		k8SClient.deleteTokenRequest(application, namespace)
 	}
 }

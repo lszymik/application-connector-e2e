@@ -1,5 +1,6 @@
 package io.project.kyma.ace2e.model.k8s
 
+import com.google.gson.internal.LinkedTreeMap
 import groovy.transform.EqualsAndHashCode
 
 @EqualsAndHashCode
@@ -12,6 +13,8 @@ class Metadata {
 	String resourceVersion
 	String selfLink
 	String uid
+	LinkedTreeMap<String, String> labels
+
 
 	@Override
 	String toString() {
@@ -24,6 +27,7 @@ class Metadata {
 				", resourceVersion='" + resourceVersion + '\'' +
 				", selfLink='" + selfLink + '\'' +
 				", uid='" + uid + '\'' +
-				'}';
+				", labels=" + labels +
+				'}'
 	}
 }
