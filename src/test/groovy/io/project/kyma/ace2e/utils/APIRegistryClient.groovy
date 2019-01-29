@@ -2,9 +2,9 @@ package io.project.kyma.ace2e.utils
 
 class APIRegistryClient {
 
-	private KymaRESTClient restClient
+    private KymaClient restClient
 
-	APIRegistryClient(KymaRESTClient kymaRESTClient) {
+    APIRegistryClient(KymaClient kymaRESTClient) {
 		restClient = kymaRESTClient
 	}
 

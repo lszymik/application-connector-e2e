@@ -7,6 +7,7 @@ class EnvironmentConfig {
 	static final String keyPath = System.getenv("SAVEPATH") + "/private.key"
 	static final String jksStorePath = System.getenv("SAVEPATH") + "/store.jks"
 	static final String keyChainPath = System.getenv("SAVEPATH") + "/re-cert.pem"
-	static final String host = System.getenv("KYMAHOST")
+	static final String domain = System.getenv("DOMAIN")
+	static final String nodePort = System.getenv("NODEPORT")
 	static final String kubeConfig = System.getenv("KUBECONFIG")
 }

@@ -22,5 +22,13 @@ class ServiceInstance {
 
     static class Spec {
         String serviceClassExternalName
+
+
+        @Override
+        String toString() {
+            return "Spec{" +
+                    "serviceClassExternalName='" + serviceClassExternalName + '\'' +
+                    '}'
+        }
     }
 }

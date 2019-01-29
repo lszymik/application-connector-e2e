@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: counter-service
+  namespace: production
+  labels:
+    component: counter-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: counter-service
+  template:
+    metadata:
+      labels:
+        component: counter-service
+    spec:
+      containers:
+      - name: counter-service
+        image: maladie/counterservice:latest
+        ports:
+        - containerPort: 8090

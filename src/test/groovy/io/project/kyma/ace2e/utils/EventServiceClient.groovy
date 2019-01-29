@@ -1,10 +1,10 @@
 package io.project.kyma.ace2e.utils
 
-class EventClient {
+class EventServiceClient {
 
-    private KymaRESTClient restClient
+    private KymaClient restClient
 
-    EventClient(KymaRESTClient kymaRESTClient) {
+	EventServiceClient(KymaClient kymaRESTClient) {
         restClient = kymaRESTClient
     }
 

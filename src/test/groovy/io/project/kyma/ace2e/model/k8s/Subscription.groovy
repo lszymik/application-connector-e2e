@@ -27,5 +27,19 @@ class Subscription {
         int max_inflight
         int push_request_timeout_ms
         String source_id
+
+
+        @Override
+        String toString() {
+            return "Spec{" +
+                    "endpoint='" + endpoint + '\'' +
+                    ", event_type='" + event_type + '\'' +
+                    ", event_type_version='" + event_type_version + '\'' +
+                    ", include_subscription_name_header=" + include_subscription_name_header +
+                    ", max_inflight=" + max_inflight +
+                    ", push_request_timeout_ms=" + push_request_timeout_ms +
+                    ", source_id='" + source_id + '\'' +
+                    '}'
+        }
     }
 }

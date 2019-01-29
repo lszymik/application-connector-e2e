@@ -8,6 +8,7 @@ class Application {
     String kind
     Metadata metadata
     Spec spec
+    Status status
 
     @Override
     String toString() {
@@ -16,10 +17,51 @@ class Application {
                 ", kind='" + kind + '\'' +
                 ", metadata=" + metadata +
                 ", spec=" + spec +
+                ", status=" + status +
                 '}'
     }
 
+
     static class Spec {
+        String accessLabel
         String description
+        Map<String, String> labels
+        Object services
+
+
+        @Override
+        String toString() {
+            return "Spec{" +
+                    "accessLabel='" + accessLabel + '\'' +
+                    ", description='" + description + '\'' +
+                    ", labels=" + labels +
+                    ", services=" + services +
+                    '}'
+        }
+    }
+
+    static class Status{
+        InstallationStatus installationStatus
+
+        @Override
+        String toString() {
+            return "Status{" +
+                    "installationStatus=" + installationStatus +
+                    '}'
+        }
+    }
+
+    static class InstallationStatus{
+        String description
+        String status
+
+
+        @Override
+        String toString() {
+            return "InstallationStatus{" +
+                    "description='" + description + '\'' +
+                    ", status='" + status + '\'' +
+                    '}'
+        }
     }
 }

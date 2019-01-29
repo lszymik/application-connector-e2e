@@ -13,7 +13,8 @@ class Metadata {
 	String resourceVersion
 	String selfLink
 	String uid
-	LinkedTreeMap<String, String> labels
+	ArrayList<String> finalizers
+	Map<String, String> labels
 
 
 	@Override
@@ -27,6 +28,7 @@ class Metadata {
 				", resourceVersion='" + resourceVersion + '\'' +
 				", selfLink='" + selfLink + '\'' +
 				", uid='" + uid + '\'' +
+				", finalizers=" + finalizers +
 				", labels=" + labels +
 				'}'
 	}

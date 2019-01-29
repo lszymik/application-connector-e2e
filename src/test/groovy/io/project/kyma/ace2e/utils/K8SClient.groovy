@@ -2,10 +2,16 @@ package io.project.kyma.ace2e.utils
 
 import io.kubernetes.client.ApiClient
 import io.kubernetes.client.Configuration
+import io.kubernetes.client.apis.AppsV1Api
+import io.kubernetes.client.apis.CoreV1Api
 import io.kubernetes.client.apis.CustomObjectsApi
 import io.kubernetes.client.models.V1DeleteOptions
+import io.kubernetes.client.models.V1Deployment
+import io.kubernetes.client.models.V1Service
 import io.kubernetes.client.util.Config
 import io.project.kyma.ace2e.model.k8s.*
+
+import java.util.stream.Collectors
 
 class K8SClient {
 
@@ -13,7 +19,9 @@ class K8SClient {
     static final String EVENTING_API_GROUP = "eventing.kyma-project.io"
     static final String SERVICE_CATALOG_API_GROUP = "servicecatalog.k8s.io"
     static final String KUBELESS_API_GROUP = "kubeless.io"
+    static final String ISTIO_API_GROUP = "networking.istio.io"
     static final String V1ALPHA1_API_VERSION = "v1alpha1"
+    static final String V1ALPHA3_API_VERSION = "v1alpha3"
     static final String V1BETA1_API_VERSION = "v1beta1"
     static final String APPLICATIONS = "applications"
     static final String TOKEN_REQUESTS = "tokenrequests"
@@ -22,18 +30,26 @@ class K8SClient {
     static final String SERVICE_INSTANCES = "serviceinstances"
     static final String SERVICE_CLASSES = "serviceclasses"
     static final String FUNCTIONS = "functions"
-    static final String EVENT_ACTIVATIONS = "eventactivations"
+    static final String VIRTUAL_SERVICES = "virtualservices"
 
     private CustomObjectsApi customObjApi
+
+    private CoreV1Api coreApi
+
+    private AppsV1Api appsApi
 
     K8SClient(String kubeConfig) {
         final ApiClient client = (kubeConfig != null && !kubeConfig.empty) ? Config.fromConfig(kubeConfig) : Config.defaultClient()
 
         Configuration.setDefaultApiClient(client)
+
         customObjApi = new CustomObjectsApi()
+        coreApi = new CoreV1Api()
+        appsApi = new AppsV1Api()
     }
 
-    def createApplication(Application app, String namespace) {
+    def createApplication(Application app) {
+        def namespace = app.metadata.namespace
         customObjApi.createNamespacedCustomObject(CONNECTOR_API_GROUP, V1ALPHA1_API_VERSION, namespace, APPLICATIONS, app, "true")
     }
 
@@ -107,7 +123,8 @@ class K8SClient {
         customObjApi.getNamespacedCustomObject(EVENTING_API_GROUP, V1ALPHA1_API_VERSION, namespace, SUBSCRIPTIONS, name)
     }
 
-    def createSubscription(Subscription subscription, String namespace) {
+    def createSubscription(Subscription subscription) {
+        def namespace = subscription.metadata.namespace
         customObjApi.createNamespacedCustomObject(EVENTING_API_GROUP, V1ALPHA1_API_VERSION, namespace, SUBSCRIPTIONS, subscription, "true")
     }
 
@@ -126,7 +143,8 @@ class K8SClient {
         customObjApi.getNamespacedCustomObject(SERVICE_CATALOG_API_GROUP, V1BETA1_API_VERSION, namespace, SERVICE_INSTANCES, name)
     }
 
-    def createServiceInstance(ServiceInstance serviceInstance, String namespace) {
+    def createServiceInstance(ServiceInstance serviceInstance) {
+        def namespace = serviceInstance.metadata.namespace
         customObjApi.createNamespacedCustomObject(SERVICE_CATALOG_API_GROUP, V1BETA1_API_VERSION, namespace, SERVICE_INSTANCES, serviceInstance, "true")
     }
 
@@ -134,11 +152,8 @@ class K8SClient {
         customObjApi.getNamespacedCustomObject(SERVICE_CATALOG_API_GROUP, V1BETA1_API_VERSION, namespace, SERVICE_CLASSES, serviceID)
     }
 
-    def getLambdaFunction(String name, String namespace) {
-        customObjApi.getNamespacedCustomObject(KUBELESS_API_GROUP, V1BETA1_API_VERSION, namespace, FUNCTIONS, name)
-    }
-
-    def createLambdaFunction(LambdaFunction lambda, String namespace) {
+    def createLambdaFunction(LambdaFunction lambda) {
+        def namespace = lambda.metadata.namespace
         customObjApi.createNamespacedCustomObject(KUBELESS_API_GROUP, V1BETA1_API_VERSION, namespace, FUNCTIONS, lambda, "true")
     }
 
@@ -152,4 +167,62 @@ class K8SClient {
                 null,
                 "Background")
     }
-}
+
+    def getVirtualService(String name, String namespace) {
+        customObjApi.getNamespacedCustomObject(ISTIO_API_GROUP, V1ALPHA3_API_VERSION, namespace, VIRTUAL_SERVICES, name)
+    }
+
+    def createVirtualService(Object virtualService, String namespace) {
+        customObjApi.createNamespacedCustomObject(ISTIO_API_GROUP, V1ALPHA3_API_VERSION, namespace, VIRTUAL_SERVICES, virtualService, "true")
+    }
+
+    def deleteVirtualService(String name, String namespace) {
+        customObjApi.deleteNamespacedCustomObject(ISTIO_API_GROUP, V1ALPHA3_API_VERSION,
+                namespace,
+                VIRTUAL_SERVICES,
+                name,
+                new V1DeleteOptions(),
+                0,
+                null,
+                "Background")
+    }
+
+    def getK8SService(String name, String namespace) {
+        coreApi.readNamespacedServiceStatus(name, namespace, "true")
+    }
+
+    def createK8SService(V1Service service) {
+        def namespace = service.metadata.namespace
+        coreApi.createNamespacedService(namespace, service, "true")
+    }
+
+    void deleteService(String name, String namespace) {
+        coreApi.deleteNamespacedService(name,
+                namespace,
+                new V1DeleteOptions(),
+                "true",
+                0,
+                null,
+                "Background")
+    }
+
+    def createDeployment(V1Deployment deployment) {
+        def namespace = deployment.metadata.namespace
+        appsApi.createNamespacedDeployment(namespace, deployment, "true")
+    }
+
+    def deleteDeployment(String name, String namespace) {
+        appsApi.deleteNamespacedDeployment(name,
+                namespace,
+                new V1DeleteOptions(),
+                "true",
+                0,
+                null,
+                "Background")
+    }
+
+    def getPods(String name, String namespace) {
+        coreApi.listNamespacedPod(namespace, "true", null, null, true, null, null, null, 30, false)
+                .items.stream().filter({pod -> pod.metadata.name.contains(name)}).collect(Collectors.toList())
+    }
+ }

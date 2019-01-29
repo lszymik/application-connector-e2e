@@ -28,5 +28,19 @@ class LambdaFunction {
         String runtime
         String timeout
         String topic
+
+
+        @Override
+        String toString() {
+            return "Spec{" +
+                    "deps='" + deps + '\'' +
+                    ", function='" + function + '\'' +
+                    ", functionContentType='" + functionContentType + '\'' +
+                    ", handler='" + handler + '\'' +
+                    ", runtime='" + runtime + '\'' +
+                    ", timeout='" + timeout + '\'' +
+                    ", topic='" + topic + '\'' +
+                    '}'
+        }
     }
 }
