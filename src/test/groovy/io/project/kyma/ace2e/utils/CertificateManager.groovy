@@ -14,17 +14,15 @@ class CertificateManager {
 	private K8SClient k8SClient
 	private String application
 	private String namespace
-	private String keyStorePassword
 
 	def setupCertificateInKeyStore() {
 		createTokenRequest(application, namespace)
 		final TokenRequest tr = waitUntilTokenUrlAvailable(application)
 
 		generateCertificate(tr.status.url)
-		createKeyStore(keyStorePassword)
+		createKeyStore()
 
 		removeTokenRequest()
-		ensureFilesCleanUp()
 	}
 
 	private def createTokenRequest(String application, String namespace) {
@@ -49,33 +47,26 @@ class CertificateManager {
 		})
 	}
 
-	private generateCertificate(String tokenUrl) {
-		new KymaConnector().generateCertificates(tokenUrl, EnvironmentConfig.savePath)
+	private static generateCertificate(String connectionUrl) {
+		new KymaConnector().generateCertificates(connectionUrl, EnvironmentConfig.tempDirectory)
 	}
 
-	private createKeyStore(String password) {
-		final File certFile = new File(EnvironmentConfig.certPath)
-		final File keyFile = new File(EnvironmentConfig.keyPath)
-		final File keyStoreFile = new File(EnvironmentConfig.jksStorePath)
+	private static createKeyStore() {
+		assert EnvironmentConfig.certFile.exists()
+		assert EnvironmentConfig.keyFile.exists()
 
-		assert certFile.exists()
-		assert keyFile.exists()
+		// TODO we need to apply exception handling here
+		try {
+			EnvironmentConfig.jksStoreFile.withOutputStream { os ->
+				PemReader.loadKeyStore(EnvironmentConfig.certFile, EnvironmentConfig.keyFile, Optional.empty())
+						.store(os, EnvironmentConfig.JSK_STORE_PASSWORD.toCharArray())
 
-		keyStoreFile.withOutputStream { os ->
-			PemReader.loadKeyStore(certFile, keyFile, Optional.empty())
-					.store(os, password.toCharArray())
-
-			os.close()
+				os.close()
+			}
 		}
-
-		keyStoreFile.deleteOnExit()
-	}
-
-	private ensureFilesCleanUp() {
-		new File(EnvironmentConfig.certPath).deleteOnExit()
-		new File(EnvironmentConfig.keyPath).deleteOnExit()
-		new File(EnvironmentConfig.keyChainPath).deleteOnExit()
-		new File(EnvironmentConfig.jksStorePath).deleteOnExit()
+		catch (final Exception e) {
+			print(e.toString())
+		}
 	}
 
 	private def removeTokenRequest(){

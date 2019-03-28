@@ -20,7 +20,7 @@ class K8SClient {
     static final String SERVICE_CATALOG_API_GROUP = "servicecatalog.k8s.io"
     static final String KUBELESS_API_GROUP = "kubeless.io"
     static final String ISTIO_API_GROUP = "networking.istio.io"
-    static final String V1ALPHA1_API_VERSION = "v1alpha1"
+    public static final String V1ALPHA1_API_VERSION = "v1alpha1"
     static final String V1ALPHA3_API_VERSION = "v1alpha3"
     static final String V1BETA1_API_VERSION = "v1beta1"
     static final String APPLICATIONS = "applications"
@@ -75,7 +75,7 @@ class K8SClient {
     def createTokenRequest(String appName, String namespace) {
         TokenRequest tr = new TokenRequest().with {
             metadata = new Metadata(name: appName)
-            apiVersion = "${CONNECTOR_API_GROUP}/${v1ALPHA1_API_VERSION}"
+            apiVersion = "${CONNECTOR_API_GROUP}/${V1ALPHA1_API_VERSION}"
             kind = "TokenRequest"
             it
         }
@@ -97,10 +97,10 @@ class K8SClient {
         customObjApi.getNamespacedCustomObject(CONNECTOR_API_GROUP, V1ALPHA1_API_VERSION, namespace, APPLICATION_MAPPINGS, app)
     }
 
-    def createApplicationMapping(String appName, String namespace) {
+    def bindApplicationToNamespace(String appName, String namespace) {
         ApplicationMapping am = new ApplicationMapping().with {
             metadata = new Metadata(name: appName, namespace: namespace)
-            apiVersion = "${CONNECTOR_API_GROUP}/${v1ALPHA1_API_VERSION}"
+            apiVersion = "${CONNECTOR_API_GROUP}/${V1ALPHA1_API_VERSION}"
             kind = "ApplicationMapping"
             it
         }

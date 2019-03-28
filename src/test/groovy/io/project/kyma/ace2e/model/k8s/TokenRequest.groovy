@@ -21,7 +21,7 @@ class TokenRequest {
 		String toString() {
 			return "Status{" +
 					"expireAfter='" + expireAfter + '\'' +
-					", application='" + application + '\'' +
+					", applicationName='" + application + '\'' +
 					", token='" + token + '\'' +
 					", state='" + state + '\'' +
 					", url='" + url + '\'' +

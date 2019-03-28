@@ -40,7 +40,7 @@ class Application {
         }
     }
 
-    static class Status{
+    static class Status {
         InstallationStatus installationStatus
 
         @Override
@@ -51,7 +51,7 @@ class Application {
         }
     }
 
-    static class InstallationStatus{
+    static class InstallationStatus {
         String description
         String status
 

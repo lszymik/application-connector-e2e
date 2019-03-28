@@ -16,23 +16,31 @@ class ApplicationConnectorTests extends Specification {
 
     @Shared
     APIRegistryClient apiRegistryClient
+
     @Shared
     EventServiceClient eventClient
+
     @Shared
     CounterServiceClient counterClient
+
     @Shared
     K8SClient k8SClient = new K8SClient(EnvironmentConfig.kubeConfig)
 
     @Shared
     def keystorePass = ""
+
     @Shared
     String integrationNamespace = "kyma-integration"
+
     @Shared
     String application = "test-app-e2e"
+
     @Shared
     String productionNamespace = "production"
+
     @Shared
     String testServiceName = "counter-service"
+
     @Shared
     String resourceConditionStatusTrue = "True"
 
@@ -43,6 +51,14 @@ class ApplicationConnectorTests extends Specification {
         createApplicationMappingCRD()
         deployCounterService()
         setupCounterServiceClient()
+    }
+
+    def cleanupSpec() {
+        k8SClient.deleteApplication(application, integrationNamespace)
+        k8SClient.deleteApplicationMapping(application, productionNamespace)
+        k8SClient.deleteDeployment(testServiceName, productionNamespace)
+        k8SClient.deleteService(testServiceName, productionNamespace)
+        k8SClient.deleteVirtualService(testServiceName, productionNamespace)
     }
 
     def "should trigger lambda function"() {
@@ -115,13 +131,7 @@ class ApplicationConnectorTests extends Specification {
         k8SClient.deleteLambdaFunction(lambdaFunction, productionNamespace)
     }
 
-    def cleanupSpec() {
-        k8SClient.deleteApplication(application, integrationNamespace)
-        k8SClient.deleteApplicationMapping(application, productionNamespace)
-        k8SClient.deleteDeployment(testServiceName, productionNamespace)
-        k8SClient.deleteService(testServiceName, productionNamespace)
-        k8SClient.deleteVirtualService(testServiceName, productionNamespace)
-    }
+
 
     private def setupClientCertificateInKeyStore() {
         new CertificateManager(k8SClient: k8SClient, application: application, namespace: integrationNamespace, keyStorePassword: keystorePass)
@@ -143,7 +153,7 @@ class ApplicationConnectorTests extends Specification {
         final String domain = EnvironmentConfig.domain
         final String basePath = nodePort != null? "https://gateway.${domain}:${nodePort}" : "https://gateway.${domain}"
 
-        def kymaRestClient = new KymaClient(basePath, EnvironmentConfig.jksStorePath, keystorePass)
+        def kymaRestClient = new RestClientWithClientCert(basePath, EnvironmentConfig.jksStorePath, keystorePass)
         apiRegistryClient = new APIRegistryClient(kymaRestClient)
         eventClient = new EventServiceClient(kymaRestClient)
 
@@ -163,7 +173,7 @@ class ApplicationConnectorTests extends Specification {
     }
 
     private def createApplicationMappingCRD() {
-        k8SClient.createApplicationMapping(application, productionNamespace)
+        k8SClient.bindApplicationToNamespace(application, productionNamespace)
     }
 
     private void deployCounterService() {
