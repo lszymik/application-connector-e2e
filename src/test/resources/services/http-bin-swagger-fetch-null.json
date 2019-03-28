@@ -1,0 +1,10 @@
+{
+  "provider": "Kyma E2E Spock",
+  "name": "HttpBin plain",
+  "description": "HttpBin Service",
+  "api": {
+    "targetUrl": "https://httpbin.org",
+    "soec" : null,
+    "specificationUrl": "https://httpbin.org/spec.json"
+  }
+}

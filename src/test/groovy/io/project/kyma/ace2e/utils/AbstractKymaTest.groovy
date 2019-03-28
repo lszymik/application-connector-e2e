@@ -1,5 +1,6 @@
 package io.project.kyma.ace2e.utils
 
+import io.project.kyma.ace2e.model.k8s.Application
 import spock.lang.Specification
 
 /**
@@ -27,6 +28,14 @@ class SharedSource {
         println "Created shared source. Its our heavy resource!"
         connectTestSuiteToKyma()
         apiRegistryClient = setupKymaClients()
+
+        def appCR = TestHelper.createApplicationCR(applicationName)
+        k8SClient.createApplication(appCR)
+
+        Awaitility.awaitUntilWithResult({
+            final Application app = (Application) k8SClient.getApplication(applicationName, KymaNames.INTEGRATION_NAMESPACE)
+            app?.status?.installationStatus?.status == KymaNames.STATUS_DEPLOYED
+        }, 10, 30)
     }
 
     private def connectTestSuiteToKyma() {
