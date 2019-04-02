@@ -25,10 +25,15 @@ class SharedSource {
     APIRegistryClient apiRegistryClient
 
     SharedSource() {
-        println "Created shared source. Its our heavy resource!"
         connectTestSuiteToKyma()
         apiRegistryClient = setupKymaClients()
 
+        cleanUpCluster()
+
+        prepareTestApplication()
+    }
+
+    private void prepareTestApplication() {
         def appCR = TestHelper.createApplicationCR(applicationName)
         k8SClient.createApplication(appCR)
 
@@ -37,6 +42,11 @@ class SharedSource {
             app?.status?.installationStatus?.status == KymaNames.STATUS_DEPLOYED
         }, 10, 30)
     }
+
+    private def cleanUpCluster() {
+        k8SClient.deleteTestApplications()
+    }
+
 
     private def connectTestSuiteToKyma() {
         new CertificateManager(k8SClient: k8SClient, application: applicationName, namespace: KymaNames.INTEGRATION_NAMESPACE)

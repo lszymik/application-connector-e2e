@@ -20,6 +20,8 @@ class TestHelper {
             apiVersion = "${K8SClient.CONNECTOR_API_GROUP}/${K8SClient.V1ALPHA1_API_VERSION}"
             kind = "Application"
             metadata = new Metadata(name: appName, namespace: KymaNames.INTEGRATION_NAMESPACE)
+            metadata.labels = new HashMap<String, String>()
+            metadata.labels.put(K8SClient.TEST_LABEL, K8SClient.TEST_LABEL_VALUE)
             it
         }
     }

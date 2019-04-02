@@ -1,5 +1,6 @@
 package io.project.kyma.ace2e.utils
 
+import com.google.gson.internal.LinkedTreeMap
 import io.kubernetes.client.ApiClient
 import io.kubernetes.client.Configuration
 import io.kubernetes.client.apis.AppsV1Api
@@ -32,6 +33,9 @@ class K8SClient {
     static final String FUNCTIONS = "functions"
     static final String VIRTUAL_SERVICES = "virtualservices"
 
+    static final String TEST_LABEL = "test"
+    static final String TEST_LABEL_VALUE = "ac-e2e"
+
     private CustomObjectsApi customObjApi
 
     private CoreV1Api coreApi
@@ -55,6 +59,15 @@ class K8SClient {
 
     def getApplication(String app, String namespace) {
         customObjApi.getNamespacedCustomObject(CONNECTOR_API_GROUP, V1ALPHA1_API_VERSION, namespace, APPLICATIONS, app)
+    }
+
+    def deleteTestApplications() {
+        LinkedTreeMap response = customObjApi.listClusterCustomObject(CONNECTOR_API_GROUP, V1ALPHA1_API_VERSION, APPLICATIONS, "true", "test=ac-e2e", "", false)
+        List<Application> apps = (List<Application>) response.get("items")
+        apps.each { app ->
+            deleteApplicationMapping(app.metadata.name, KymaNames.INTEGRATION_NAMESPACE)
+            deleteApplication(app.metadata.name, KymaNames.INTEGRATION_NAMESPACE)
+        }
     }
 
     def deleteApplication(String appName, String namespace) {
@@ -109,14 +122,26 @@ class K8SClient {
     }
 
     def deleteApplicationMapping(String appName, String namespace) {
-        customObjApi.deleteNamespacedCustomObject(CONNECTOR_API_GROUP, V1ALPHA1_API_VERSION,
-                namespace,
-                APPLICATION_MAPPINGS,
-                appName,
-                new V1DeleteOptions(),
-                0,
-                null,
-                "Background")
+        if (checkApplicationMappingExists(appName, namespace)) {
+            customObjApi.deleteNamespacedCustomObject(CONNECTOR_API_GROUP, V1ALPHA1_API_VERSION,
+                    namespace,
+                    K8SClient.APPLICATION_MAPPINGS,
+                    appName,
+                    new V1DeleteOptions(),
+                    0,
+                    null,
+                    "Background")
+        }
+    }
+
+    private def checkApplicationMappingExists(String app, String namespace) {
+        try {
+            getApplicationMapping(appName, namespace)
+            return true
+        }
+        catch (final Exception ignore) {
+            return false
+        }
     }
 
     def getSubscription(String name, String namespace) {
@@ -223,6 +248,6 @@ class K8SClient {
 
     def getPods(String name, String namespace) {
         coreApi.listNamespacedPod(namespace, "true", null, null, true, null, null, null, 30, false)
-                .items.stream().filter({pod -> pod.metadata.name.contains(name)}).collect(Collectors.toList())
+                .items.stream().filter({ pod -> pod.metadata.name.contains(name) }).collect(Collectors.toList())
     }
- }
+}
