@@ -24,9 +24,13 @@ class SharedSource {
 
     APIRegistryClient apiRegistryClient
 
+    EventServiceClient eventClient
+
+    CounterServiceClient counterClient
+
     SharedSource() {
         connectTestSuiteToKyma()
-        apiRegistryClient = setupKymaClients()
+        setupRestClients()
 
         cleanUpCluster()
 
@@ -53,10 +57,14 @@ class SharedSource {
                 .setupCertificateInKeyStore()
     }
 
-    private static def setupKymaClients() {
-        final String basePath = EnvironmentConfig.nodePort != null ? "https://gateway.${EnvironmentConfig.domain}:${EnvironmentConfig.nodePort}" : "https://gateway.${EnvironmentConfig.domain}"
+    private def setupRestClients() {
+        final String gatewayPath = EnvironmentConfig.nodePort != null ? "https://gateway.${EnvironmentConfig.domain}:${EnvironmentConfig.nodePort}" : "https://gateway.${EnvironmentConfig.domain}"
+        def counterServicePath = "https://counter-service.${EnvironmentConfig.domain}"
 
-        def kymaRestClient = new RestClientWithClientCert(basePath, EnvironmentConfig.jksStoreFile.toString(), EnvironmentConfig.JSK_STORE_PASSWORD)
-        return new APIRegistryClient(kymaRestClient)
+        def securedRestClient = new RestClientWithClientCert(gatewayPath, EnvironmentConfig.jksStoreFile.toString(), EnvironmentConfig.JSK_STORE_PASSWORD)
+        apiRegistryClient = new APIRegistryClient(securedRestClient)
+        eventClient = new EventServiceClient(securedRestClient)
+
+        counterClient = new CounterServiceClient(counterServicePath)
     }
 }

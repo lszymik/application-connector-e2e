@@ -110,15 +110,17 @@ class K8SClient {
         customObjApi.getNamespacedCustomObject(CONNECTOR_API_GROUP, V1ALPHA1_API_VERSION, namespace, APPLICATION_MAPPINGS, app)
     }
 
-    def bindApplicationToNamespace(String appName, String namespace) {
-        ApplicationMapping am = new ApplicationMapping().with {
-            metadata = new Metadata(name: appName, namespace: namespace)
-            apiVersion = "${CONNECTOR_API_GROUP}/${V1ALPHA1_API_VERSION}"
-            kind = "ApplicationMapping"
-            it
-        }
+    def bindApplicationToNamespace(String appName, String namespace, boolean check = false) {
+        if (check && !checkApplicationMappingExists(appName, namespace)) {
+            ApplicationMapping am = new ApplicationMapping().with {
+                metadata = new Metadata(name: appName, namespace: namespace)
+                apiVersion = "${CONNECTOR_API_GROUP}/${V1ALPHA1_API_VERSION}"
+                kind = "ApplicationMapping"
+                it
+            }
 
-        customObjApi.createNamespacedCustomObject(CONNECTOR_API_GROUP, V1ALPHA1_API_VERSION, namespace, APPLICATION_MAPPINGS, am, "true")
+            customObjApi.createNamespacedCustomObject(CONNECTOR_API_GROUP, V1ALPHA1_API_VERSION, namespace, APPLICATION_MAPPINGS, am, "true")
+        }
     }
 
     def deleteApplicationMapping(String appName, String namespace) {
@@ -171,6 +173,18 @@ class K8SClient {
     def createServiceInstance(ServiceInstance serviceInstance) {
         def namespace = serviceInstance.metadata.namespace
         customObjApi.createNamespacedCustomObject(SERVICE_CATALOG_API_GROUP, V1BETA1_API_VERSION, namespace, SERVICE_INSTANCES, serviceInstance, "true")
+    }
+
+    def deleteServiceInstance(String name, String namespace) {
+        try {
+            customObjApi.deleteNamespacedCustomObject(SERVICE_CATALOG_API_GROUP, V1BETA1_API_VERSION, namespace, SERVICE_INSTANCES, name, new V1DeleteOptions(),
+                    0,
+                    null,
+                    "Background")
+        }
+        catch (final Exception ignore) {
+            println("Could delete the ServiceInstance. Reason: " + ignore.toString())
+        }
     }
 
     def getServiceClass(String serviceID, String namespace) {
