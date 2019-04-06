@@ -17,8 +17,8 @@ class EnvironmentConfig {
 	static final String nodePort = System.getenv("NODEPORT")
 
 	static {
-		certFile = new File(tempDirectory + "certificate.crt")
-		keyFile = new File(tempDirectory + "private.key")
+		certFile = new File(tempDirectory + "/certificate.crt")
+		keyFile = new File(tempDirectory + "/private.key")
 
 		jksStoreFile = Files.createTempFile("store", "jks").toFile()
 		keyChainFile = Files.createTempFile("re-cert", "pem").toFile()

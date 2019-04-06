@@ -20,6 +20,14 @@ class SharedSource {
 
     String applicationName = "e2e-test-app-" + KymaNames.randomString
 
+    String serviceInstance = "test-service-instance-e2e"
+
+    String eventTopic = "exampleEvent"
+
+    String lambdaFunction = "test-lambda-e2e"
+
+    String subscription = "test-subscription-e2e"
+
     K8SClient k8SClient = new K8SClient(EnvironmentConfig.kubeConfig)
 
     APIRegistryClient apiRegistryClient
@@ -48,6 +56,9 @@ class SharedSource {
     }
 
     private def cleanUpCluster() {
+        k8SClient.deleteSubscription(subscription, KymaNames.PRODUCTION_NAMESPACE)
+        k8SClient.deleteLambdaFunction(lambdaFunction, KymaNames.PRODUCTION_NAMESPACE)
+        k8SClient.deleteServiceInstance(serviceInstance, KymaNames.PRODUCTION_NAMESPACE)
         k8SClient.deleteTestApplications()
     }
 

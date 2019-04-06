@@ -8,14 +8,14 @@ import io.project.kyma.ace2e.model.k8s.*
 import io.project.kyma.ace2e.utils.*
 import org.awaitility.core.ConditionTimeoutException
 import spock.lang.Shared
+import spock.lang.Stepwise
 
 import static org.apache.http.HttpStatus.SC_OK
 
+@Stepwise
 class EventLambdaFlowTests extends AbstractKymaTest {
 
     private static final String COUNTER_SERVICE = "counter-service"
-
-    private static final String serviceInstance = "test-service-instance-e2e"
 
     @Shared
     String testServiceName = "counter-service"
@@ -25,8 +25,6 @@ class EventLambdaFlowTests extends AbstractKymaTest {
 
         checkCounterServiceReadiness()
         ensureApplicationMappedToEnvironment()
-
-        sharedSource.k8SClient.deleteServiceInstance(serviceInstance, KymaNames.PRODUCTION_NAMESPACE)
     }
 
     def cleanupSpec() {
@@ -74,35 +72,26 @@ class EventLambdaFlowTests extends AbstractKymaTest {
         then:
         waitUntilServiceInstanceReady(serviceInstance)
 
-        and:
-        final String eventTopic = "exampleEvent"
-        final String lambdaFunction = "test-lambda-e2e"
-
-        sharedSource.k8SClient.createLambdaFunction(newLambdaFunction(eventTopic, lambdaFunction))
+        when:
+        sharedSource.k8SClient.createLambdaFunction(newLambdaFunction(sharedSource.eventTopic, sharedSource.lambdaFunction))
 
         and:
-        waitUntilLambdaFunctionReady(lambdaFunction)
-//
-//        and:
-//        final String subscription = "test-subscription-e2e"
-//
-//        k8SClient.createSubscription(newSubscription(eventTopic, subscription, lambdaFunction))
-//
-//        and:
-//        waitUntilSubscriptionReady(subscription)
-//
-//        and:
-//        def preEventCounter = checkCounter()
-//
-//        and:
-//        sendEvent(eventTopic)
-//
-//        then:
-//        checkLambdaTriggered(preEventCounter)
-//
-//        cleanup:
-//        k8SClient.deleteSubscription(subscription, productionNamespace)
-//        k8SClient.deleteLambdaFunction(lambdaFunction, productionNamespace)
+        waitUntilLambdaFunctionReady(sharedSource.lambdaFunction)
+
+        and:
+        sharedSource.k8SClient.createSubscription(newSubscription(sharedSource.eventTopic, sharedSource.subscription, sharedSource.lambdaFunction))
+
+        and:
+        waitUntilSubscriptionReady(sharedSource.subscription)
+
+        and:
+        def preEventCounter = checkCounter()
+
+        and:
+        sendEvent(sharedSource.eventTopic)
+
+        then:
+        checkLambdaTriggered(preEventCounter)
     }
 
     private static def checkCounterServiceReadiness() {
@@ -115,7 +104,7 @@ class EventLambdaFlowTests extends AbstractKymaTest {
         sharedSource.k8SClient.bindApplicationToNamespace(sharedSource.applicationName, KymaNames.PRODUCTION_NAMESPACE, true)
     }
 
-    private def waitUntilServiceInstanceReady(String serviceInstance) {
+    private static def waitUntilServiceInstanceReady(String serviceInstance) {
         Awaitility.awaitUntilWithResult({
             final def instance = sharedSource.k8SClient.getServiceInstance(serviceInstance, KymaNames.PRODUCTION_NAMESPACE)
             final def status = instance?.status?.conditions?.status
@@ -204,7 +193,7 @@ class EventLambdaFlowTests extends AbstractKymaTest {
             kind = "Subscription"
             metadata = new Metadata(
                     name: subscription,
-                    namespace: productionNamespace,
+                    namespace: KymaNames.PRODUCTION_NAMESPACE,
                     labels: [
                             Function: function
                     ]
@@ -216,7 +205,7 @@ class EventLambdaFlowTests extends AbstractKymaTest {
                     include_subscription_name_header: true,
                     max_inflight: 400,
                     push_request_timeout_ms: 2000,
-                    source_id: application
+                    source_id: sharedSource.applicationName
             )
             it
         }

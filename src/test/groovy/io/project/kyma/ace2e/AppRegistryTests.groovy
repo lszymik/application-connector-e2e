@@ -2,9 +2,11 @@ package io.project.kyma.ace2e
 
 import groovy.json.JsonSlurper
 import io.project.kyma.ace2e.utils.AbstractKymaTest
+import spock.lang.Stepwise
 
 import static org.apache.http.HttpStatus.SC_OK
 
+@Stepwise
 class AppRegistryTests extends AbstractKymaTest {
 
     def "should register an API"() {

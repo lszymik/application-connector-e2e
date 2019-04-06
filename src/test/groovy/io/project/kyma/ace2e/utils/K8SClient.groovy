@@ -111,7 +111,7 @@ class K8SClient {
     }
 
     def bindApplicationToNamespace(String appName, String namespace, boolean check = false) {
-        if (check && !checkApplicationMappingExists(appName, namespace)) {
+        if (!check || !checkApplicationMappingExists(appName, namespace)) {
             ApplicationMapping am = new ApplicationMapping().with {
                 metadata = new Metadata(name: appName, namespace: namespace)
                 apiVersion = "${CONNECTOR_API_GROUP}/${V1ALPHA1_API_VERSION}"
@@ -138,7 +138,7 @@ class K8SClient {
 
     private def checkApplicationMappingExists(String app, String namespace) {
         try {
-            getApplicationMapping(appName, namespace)
+            getApplicationMapping(app, namespace)
             return true
         }
         catch (final Exception ignore) {
@@ -156,14 +156,20 @@ class K8SClient {
     }
 
     def deleteSubscription(String subscriptionName, String namespace) {
-        customObjApi.deleteNamespacedCustomObject(EVENTING_API_GROUP, V1ALPHA1_API_VERSION,
-                namespace,
-                SUBSCRIPTIONS,
-                subscriptionName,
-                new V1DeleteOptions(),
-                0,
-                null,
-                "Background")
+        try {
+            customObjApi.deleteNamespacedCustomObject(EVENTING_API_GROUP, V1ALPHA1_API_VERSION,
+                    namespace,
+                    SUBSCRIPTIONS,
+                    subscriptionName,
+                    new V1DeleteOptions(),
+                    0,
+                    null,
+                    "Background")
+
+        }
+        catch (Exception ignore) {
+            println "Cannot delete the subscription"
+        }
     }
 
     def getServiceInstance(String name, String namespace) {
@@ -171,8 +177,13 @@ class K8SClient {
     }
 
     def createServiceInstance(ServiceInstance serviceInstance) {
-        def namespace = serviceInstance.metadata.namespace
-        customObjApi.createNamespacedCustomObject(SERVICE_CATALOG_API_GROUP, V1BETA1_API_VERSION, namespace, SERVICE_INSTANCES, serviceInstance, "true")
+        try {
+            def namespace = serviceInstance.metadata.namespace
+            customObjApi.createNamespacedCustomObject(SERVICE_CATALOG_API_GROUP, V1BETA1_API_VERSION, namespace, SERVICE_INSTANCES, serviceInstance, "true")
+        }
+        catch (Exception ignore) {
+            println "Cannot create the service instance."
+        }
     }
 
     def deleteServiceInstance(String name, String namespace) {
@@ -197,14 +208,19 @@ class K8SClient {
     }
 
     def deleteLambdaFunction(String name, String namespace) {
-        customObjApi.deleteNamespacedCustomObject(KUBELESS_API_GROUP, V1BETA1_API_VERSION,
-                namespace,
-                FUNCTIONS,
-                name,
-                new V1DeleteOptions(),
-                0,
-                null,
-                "Background")
+        try {
+            customObjApi.deleteNamespacedCustomObject(KUBELESS_API_GROUP, V1BETA1_API_VERSION,
+                    namespace,
+                    FUNCTIONS,
+                    name,
+                    new V1DeleteOptions(),
+                    0,
+                    null,
+                    "Background")
+        }
+        catch (Exception ignore) {
+            println "Cannot delete the test lambda"
+        }
     }
 
     def getVirtualService(String name, String namespace) {
