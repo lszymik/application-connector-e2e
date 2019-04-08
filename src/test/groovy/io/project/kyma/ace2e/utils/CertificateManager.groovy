@@ -30,7 +30,7 @@ class CertificateManager {
 	}
 
 	private waitUntilTokenUrlAvailable(String application) {
-		await().atMost(30, SECONDS)
+		await().atMost(120, SECONDS)
 				.pollDelay(2, SECONDS)
 				.pollInterval(5, SECONDS)
 				.until({

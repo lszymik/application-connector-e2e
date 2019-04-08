@@ -52,7 +52,7 @@ class SharedSource {
         Awaitility.awaitUntilWithResult({
             final Application app = (Application) k8SClient.getApplication(applicationName, KymaNames.INTEGRATION_NAMESPACE)
             app?.status?.installationStatus?.status == KymaNames.STATUS_DEPLOYED
-        }, 10, 30)
+        }, 10, 120)
     }
 
     private def cleanUpCluster() {

@@ -170,7 +170,7 @@ class EventLambdaFlowTests extends AbstractKymaTest {
                     .status?.conditions?.status
                     .stream()
                     .allMatch({ s -> s == "True" })
-        }, 5, 30)
+        }, 5, 120)
     }
 
     private def checkLambdaTriggered(int preEventCounter) {

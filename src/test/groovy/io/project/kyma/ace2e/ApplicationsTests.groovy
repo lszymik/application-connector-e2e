@@ -12,12 +12,9 @@ class ApplicationsTests extends AbstractKymaTest {
 
     def "bindApplicationToEnvironment"() {
         when:
-        def result = sharedSource.k8SClient.bindApplicationToNamespace(sharedSource.applicationName, KymaNames.PRODUCTION_NAMESPACE, true)
+        sharedSource.k8SClient.bindApplicationToNamespace(sharedSource.applicationName, KymaNames.PRODUCTION_NAMESPACE, true)
 
-        then:
-        result.metadata.get("name") == sharedSource.applicationName
-
-        when:
+        and:
         ApplicationMapping mapping = (ApplicationMapping) sharedSource.k8SClient.getApplicationMapping(sharedSource.applicationName, KymaNames.PRODUCTION_NAMESPACE)
 
         then:
