@@ -22,7 +22,7 @@ class SharedSource {
 
     String serviceInstance = "test-service-instance-e2e"
 
-    String eventTopic = "exampleEvent"
+    String eventTopic = "example-event"
 
     String lambdaFunction = "test-lambda-e2e"
 
@@ -46,6 +46,7 @@ class SharedSource {
     }
 
     private void prepareTestApplication() {
+        println "Preparing test Application"
         def appCR = TestHelper.createApplicationCR(applicationName)
         k8SClient.createApplication(appCR)
 
@@ -53,6 +54,7 @@ class SharedSource {
             final Application app = (Application) k8SClient.getApplication(applicationName, KymaNames.INTEGRATION_NAMESPACE)
             app?.status?.installationStatus?.status == KymaNames.STATUS_DEPLOYED
         }, 10, 120)
+        println "Test Application created"
     }
 
     private def cleanUpCluster() {

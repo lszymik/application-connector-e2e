@@ -11,5 +11,4 @@ class EventServiceClient {
     def sendEvent(String appName, Object body) {
         restClient.post(path: "/${appName}/v1/events", body: body)
     }
-
 }

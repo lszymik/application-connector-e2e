@@ -47,6 +47,7 @@ class EventLambdaFlowTests extends AbstractKymaTest {
         def serviceInstance = "test-service-instance-e2e"
 
         when:
+        println "Creating test Service"
         def result = sharedSource.apiRegistryClient.createService(sharedSource.applicationName, serviceDefinition)
 
         then:
@@ -79,6 +80,7 @@ class EventLambdaFlowTests extends AbstractKymaTest {
         waitUntilLambdaFunctionReady(sharedSource.lambdaFunction)
 
         and:
+        println "Creating Subscription"
         sharedSource.k8SClient.createSubscription(newSubscription(sharedSource.eventTopic, sharedSource.subscription, sharedSource.lambdaFunction))
 
         and:
@@ -95,13 +97,16 @@ class EventLambdaFlowTests extends AbstractKymaTest {
     }
 
     private static def checkCounterServiceReadiness() {
+        println "Checking Counter Service readiness"
         Awaitility.awaitUntil({
             sharedSource.counterClient.checkHealth().status == SC_OK
         }, 5, 180)
+        println "Counter Service ready"
     }
 
     private static def ensureApplicationMappedToEnvironment() {
         sharedSource.k8SClient.bindApplicationToNamespace(sharedSource.applicationName, KymaNames.PRODUCTION_NAMESPACE, true)
+        println "Application mapped to Environment"
     }
 
     private static def waitUntilServiceInstanceReady(String serviceInstance) {
@@ -114,6 +119,8 @@ class EventLambdaFlowTests extends AbstractKymaTest {
     }
 
     private def deployCounterService() {
+        println "Deploying Counter Service"
+
         def deployment = (V1Deployment) getYamlFile('/deployments/counter-deployment.yaml')
         def service = (V1Service) getYamlFile('/deployments/counter-service.yaml')
         def virtualService = getVirtualServiceYamlFile('/deployments/counter-virtual-service.yaml')
@@ -132,6 +139,8 @@ class EventLambdaFlowTests extends AbstractKymaTest {
                             .allMatch({ c -> c.status == "True" })
             })
         }, 5, 180)
+
+        println "Counter Service Deployed"
     }
 
     private def getYamlFile(String resourcePath) {
@@ -179,10 +188,10 @@ class EventLambdaFlowTests extends AbstractKymaTest {
             Awaitility.awaitUntil({
                 def postEventCounter = checkCounter()
                 postEventCounter == preEventCounter + 1
-            }, 30, 120)
+            }, 30, 360)
 
             true
-        } catch (ConditionTimeoutException e) {
+        } catch (ConditionTimeoutException ignore) {
             false
         }
     }

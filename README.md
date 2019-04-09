@@ -9,6 +9,7 @@ Project application-connector-e2e is a testing tool that aggregates few features
 Before starting tests, the following environmental variables have to be exported:
 
 - `DOMAIN` - Kyma cluster domain ; on minikube it will be `kyma.local`, on a cluster it will be of a form: `framefrog.cluster.kyma.cx`
+- `NODEPORT` - (Minikube only!) Port of Ingress Nginx controller, for example: `27345`
 - `KUBECONFIG` - (optional) path to Kubeconfig file. If left empty, K8SClient will create configuration based on default Kubeconfig.
 
 In case of local Kyma development, Kyma server certificate has to be added to the Java Key Store. To do this, run:

@@ -71,14 +71,18 @@ class K8SClient {
     }
 
     def deleteApplication(String appName, String namespace) {
-        customObjApi.deleteNamespacedCustomObject(CONNECTOR_API_GROUP, V1ALPHA1_API_VERSION,
-                namespace,
-                APPLICATIONS,
-                appName,
-                new V1DeleteOptions(),
-                0,
-                null,
-                "Background")
+        try {
+            customObjApi.deleteNamespacedCustomObject(CONNECTOR_API_GROUP, V1ALPHA1_API_VERSION,
+                    namespace,
+                    APPLICATIONS,
+                    appName,
+                    new V1DeleteOptions(),
+                    0,
+                    null,
+                    "Background")
+        } catch (Exception e) {
+            println "Cannot delete the Application. Reason: " + e.toString()
+        }
     }
 
     def getTokenRequest(String appName, String namespace) {
@@ -97,13 +101,17 @@ class K8SClient {
     }
 
     def deleteTokenRequest(String appName, String namespace) {
-        customObjApi.deleteNamespacedCustomObject(CONNECTOR_API_GROUP, V1ALPHA1_API_VERSION, namespace,
-                TOKEN_REQUESTS,
-                appName,
-                new V1DeleteOptions(),
-                0,
-                null,
-                "Background")
+        try {
+            customObjApi.deleteNamespacedCustomObject(CONNECTOR_API_GROUP, V1ALPHA1_API_VERSION, namespace,
+                    TOKEN_REQUESTS,
+                    appName,
+                    new V1DeleteOptions(),
+                    0,
+                    null,
+                    "Background")
+        } catch (Exception e) {
+            println "Cannot delete the TokenRequest. Reason: " + e.toString()
+        }
     }
 
     def getApplicationMapping(String app, String namespace) {
@@ -124,15 +132,19 @@ class K8SClient {
     }
 
     def deleteApplicationMapping(String appName, String namespace) {
-        if (checkApplicationMappingExists(appName, namespace)) {
-            customObjApi.deleteNamespacedCustomObject(CONNECTOR_API_GROUP, V1ALPHA1_API_VERSION,
-                    namespace,
-                    K8SClient.APPLICATION_MAPPINGS,
-                    appName,
-                    new V1DeleteOptions(),
-                    0,
-                    null,
-                    "Background")
+        try {
+            if (checkApplicationMappingExists(appName, namespace)) {
+                customObjApi.deleteNamespacedCustomObject(CONNECTOR_API_GROUP, V1ALPHA1_API_VERSION,
+                        namespace,
+                        K8SClient.APPLICATION_MAPPINGS,
+                        appName,
+                        new V1DeleteOptions(),
+                        0,
+                        null,
+                        "Background")
+            }
+        } catch (Exception e) {
+            println "Cannot delete the ApplicationMapping. Reason: " + e.toString()
         }
     }
 
@@ -167,8 +179,8 @@ class K8SClient {
                     "Background")
 
         }
-        catch (Exception ignore) {
-            println "Cannot delete the subscription"
+        catch (Exception e) {
+            println "Cannot delete the Subscription. Reason: " + e.toString()
         }
     }
 
@@ -182,7 +194,7 @@ class K8SClient {
             customObjApi.createNamespacedCustomObject(SERVICE_CATALOG_API_GROUP, V1BETA1_API_VERSION, namespace, SERVICE_INSTANCES, serviceInstance, "true")
         }
         catch (Exception ignore) {
-            println "Cannot create the service instance."
+            println "Cannot create the ServiceInstance."
         }
     }
 
@@ -193,8 +205,8 @@ class K8SClient {
                     null,
                     "Background")
         }
-        catch (final Exception ignore) {
-            println("Could delete the ServiceInstance. Reason: " + ignore.toString())
+        catch (final Exception e) {
+            println "Cannot delete the ServiceInstance. Reason: " + e.toString()
         }
     }
 
@@ -218,8 +230,8 @@ class K8SClient {
                     null,
                     "Background")
         }
-        catch (Exception ignore) {
-            println "Cannot delete the test lambda"
+        catch (Exception e) {
+            println "Cannot delete the test Lambda. Reason: " + e.toString()
         }
     }
 
@@ -232,14 +244,18 @@ class K8SClient {
     }
 
     def deleteVirtualService(String name, String namespace) {
-        customObjApi.deleteNamespacedCustomObject(ISTIO_API_GROUP, V1ALPHA3_API_VERSION,
-                namespace,
-                VIRTUAL_SERVICES,
-                name,
-                new V1DeleteOptions(),
-                0,
-                null,
-                "Background")
+        try {
+            customObjApi.deleteNamespacedCustomObject(ISTIO_API_GROUP, V1ALPHA3_API_VERSION,
+                    namespace,
+                    VIRTUAL_SERVICES,
+                    name,
+                    new V1DeleteOptions(),
+                    0,
+                    null,
+                    "Background")
+        } catch (Exception e) {
+            println "Cannot delete the VirtualService. Reason: " + e.toString()
+        }
     }
 
     def getK8SService(String name, String namespace) {
@@ -252,13 +268,17 @@ class K8SClient {
     }
 
     void deleteService(String name, String namespace) {
-        coreApi.deleteNamespacedService(name,
-                namespace,
-                new V1DeleteOptions(),
-                "true",
-                0,
-                null,
-                "Background")
+        try {
+            coreApi.deleteNamespacedService(name,
+                    namespace,
+                    new V1DeleteOptions(),
+                    "true",
+                    0,
+                    null,
+                    "Background")
+        } catch (Exception e) {
+            println "Cannot delete the Service. Reason: " + e.toString()
+        }
     }
 
     def createDeployment(V1Deployment deployment) {
@@ -267,13 +287,17 @@ class K8SClient {
     }
 
     def deleteDeployment(String name, String namespace) {
-        appsApi.deleteNamespacedDeployment(name,
-                namespace,
-                new V1DeleteOptions(),
-                "true",
-                0,
-                null,
-                "Background")
+        try {
+            appsApi.deleteNamespacedDeployment(name,
+                    namespace,
+                    new V1DeleteOptions(),
+                    "true",
+                    0,
+                    null,
+                    "Background")
+        } catch (Exception e) {
+            println "Cannot delete the Service. Reason: " + e.toString()
+        }
     }
 
     def getPods(String name, String namespace) {
