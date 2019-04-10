@@ -8,6 +8,18 @@ class TokenRequest {
 	String kind
 	Metadata metadata
 	Status status
+	Context context
+
+	@Override
+	String toString() {
+		return "TokenRequest{" +
+				"apiVersion='" + apiVersion + '\'' +
+				", kind='" + kind + '\'' +
+				", metadata=" + metadata +
+				", status=" + status +
+				", context=" + context +
+				'}'
+	}
 
 	class Status {
 		String expireAfter
@@ -21,7 +33,7 @@ class TokenRequest {
 		String toString() {
 			return "Status{" +
 					"expireAfter='" + expireAfter + '\'' +
-					", application='" + application + '\'' +
+					", applicationName='" + application + '\'' +
 					", token='" + token + '\'' +
 					", state='" + state + '\'' +
 					", url='" + url + '\'' +
@@ -29,14 +41,18 @@ class TokenRequest {
 		}
 	}
 
-	@Override
-	String toString() {
-		return "TokenRequest{" +
-				"apiVersion='" + apiVersion + '\'' +
-				", kind='" + kind + '\'' +
-				", metadata=" + metadata +
-				", status=" + status +
-				'}'
+	class Context {
+		String group
+		String tenant
+
+
+		@Override
+		String toString() {
+			return "Context{" +
+					"group='" + group + '\'' +
+					", tenant='" + tenant + '\'' +
+					'}'
+		}
 	}
 
 }
